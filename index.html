@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> 💜 For Krystal 💜</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: black;
+        }
+
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+            /* }
+        .button-container {
+            position: absolute;
+            top: 10%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        } */
+            /* .animated-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            color: white;
+            background-color: purple;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            outline: none;
+        }
+        .animated-button:hover {
+            transform: scale(1.1);
+            background-color: #800080;
+        }
+        .animated-button:active {
+            transform: scale(0.9);
+            background-color: #4b0082; */
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <div class="button-container">
+        <button class="animated-button">Button 1</button>
+        <button class="animated-button">Button 2</button>
+    </div> -->
+
+    <div id="container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/geometries/TextGeometry.js"></script>
+
+    <script>
+        // Three.js setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(150, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // Create the heart shape and mesh
+        const heartShape = new THREE.Shape();
+        heartShape.moveTo(0, 0.5);
+        heartShape.bezierCurveTo(0.5, 1, 1, 0.5, 0, 0);
+        heartShape.bezierCurveTo(-1, 0.5, -0.5, 1, 0, 0.5);
+        const extrudeSettings = {
+            depth: 0.5,
+            bevelEnabled: true,
+            bevelSegments: 2,
+            steps: 2,
+            bevelSize: 0.5,
+            bevelThickness: 0.1
+        };
+        const geometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+
+        const gridMaterial = new THREE.MeshBasicMaterial({
+            color: 0x9b59b6,
+            wireframe: true,
+        });
+
+        const heartMesh = new THREE.Mesh(geometry, gridMaterial);
+        scene.add(heartMesh);
+        heartMesh.scale.set(2, 2, 2);
+
+        let pulseTime = 0;
+        camera.position.z = 5;
+
+        // Random space particles (comets)
+        const particlesCount = 500;
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesMaterial = new THREE.PointsMaterial({
+            color: 0x94dfff,
+            size: 0.02,
+            transparent: true,
+            opacity: 0.8,
+        });
+
+        const particlesArray = new Float32Array(particlesCount * 3);
+        const speedArray = new Float32Array(particlesCount);
+
+        for (let i = 0; i < particlesCount; i++) {
+            particlesArray[i * 3] = (Math.random() - 0.5) * 10; // X position
+            particlesArray[i * 3 + 1] = (Math.random() - 0.5) * 10; // Y position
+            particlesArray[i * 3 + 2] = (Math.random() - 0.5) * 10; // Z position
+            speedArray[i] = Math.random() * 0.01 + 0.005; // Speed for each particle
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlesArray, 3));
+
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particles);
+
+        // Update particle positions to simulate movement
+        function updateParticles() {
+            const positions = particlesGeometry.attributes.position.array;
+            for (let i = 0; i < particlesCount; i++) {
+                positions[i * 3] += speedArray[i]; // Move along X axis
+                positions[i * 3 + 1] += speedArray[i] * (Math.random() - 0.5); // Slight Y movement
+                positions[i * 3 + 2] += speedArray[i] * (Math.random() - 0.5); // Slight Z movement
+
+                // Reset particle position if it moves too far
+                if (positions[i * 3] > 5) {
+                    positions[i * 3] = -5;
+                }
+            }
+            particlesGeometry.attributes.position.needsUpdate = true;
+        }
+
+        // Load the font for 3D text
+        const fontLoader = new THREE.FontLoader();
+        let textMesh;
+        let textArray = [
+        "Psalm 34:18: The LORD is close\n to the brokenhearted and saves\n those who are crushed\n in spirit.",
+    "Isaiah 41:10: So do not fear,\n for I am with you;\n do not be dismayed,\n for I am your God.\n I will strengthen you\n and help you;\n I will uphold you\n with my righteous right hand.",
+    "Philippians 4:13: I can do all\n this through him who gives\n me strength.",
+    "2 Corinthians 1:3-4: Praise be to the\n God and Father of our\n Lord Jesus Christ,\n the Father of compassion\n and the God of all\n comfort, who comforts us\n in all our troubles,\n so that we can comfort\n those in any trouble.",
+    "Matthew 11:28-30: Come to me,\n all you who are weary\n and burdened,\n and I will give\n you rest. Take my\n yoke upon you and\n learn from me,\n for I am gentle\n and humble in heart,\n and you will find\n rest for your souls.\n For my yoke is\neasy and my burden\n is light.",
+    "Jeremiah 29:11: For I know\n the plans I have\n for you,” declares the\n LORD,\n “plans to prosper you\n and not to harm\n you,\n plans to give\n you hope and a\n future.",
+    "1 Peter 5:7: Cast all your\n anxiety on him because\n he cares for you.",
+    "Romans 8:28: And we know\n that in all things\n God works for the\n good of those who\n love him,\n who have been\n called according to his\n purpose.",
+    "Psalm 46:1-2: God is our\n refuge and strength,\n an ever-present help\n in trouble.\n Therefore we will\n not fear,\n though the earth\n give way and the\n mountains fall\n into the heart\n of the sea.",
+    "Isaiah 40:31: But those who\n hope in the LORD\n will renew their strength.\n They will soar on\n wings like eagles;\n they will run\n and not grow weary;\n they will walk\n and not be faint.",
+    "Psalm 55:22: Cast your cares\n on the LORD and\n he will sustain you;\n he will never let\n the righteous be\n shaken.",
+    "Matthew 5:4: Blessed are those\n who mourn,\n for they will\n be comforted.",
+    "John 16:33: I have told\n you these things,\n so that in me\n you may have peace.\n In this world\n you will have\n trouble.\n But take heart!\n I have overcome\n the world.",
+    "Psalm 121:1-2: I lift up\n my eyes to the\n mountains— where does\n my help come from?\n My help comes\n from the LORD,\n the Maker of\n heaven and earth.",
+    "Lamentations 3:22-23: Because of the\n LORD’s great love we\n are not consumed,\n for his compassions never\n fail. They are\n new every morning;\n great is your\n faithfulness.",
+    "Hebrews 13:5: Never will I\n leave you;\n never will I\n forsake you.",
+    "Psalm 30:5: For his anger\n lasts only a\n moment,\n but his favor\n lasts a lifetime;\n weeping may stay\n for the night,\n but rejoicing comes\n in the morning.",
+    "Psalm 37:23-24: The LORD makes\n firm the steps\n of the one\n who delights in\n him; though he\n may stumble,\n he will not\n fall,\n for the LORD\n upholds him\n with his hand.",
+    "2 Timothy 1:7: For God has\n not given us\n a spirit of\n fear,\n but of power,\n love,\n and self-discipline.",
+    "Isaiah 43:2: When you pass\n through the waters,\n I will be\n with you;\n and when you\n pass through the\n rivers,\n they will not\n sweep over you.\n When you walk\n through the fire,\n you will not\n be burned;\n the flames will\n not set you\n ablaze.",
+    "James 1:2-3: Consider it pure\n joy,\n my brothers and\n sisters,\n whenever you face\n trials of many\n kinds,\n because you know\n that the testing\n of your faith\n produces perseverance.",
+    "Colossians 3:2: Set your minds\n on things that\n are above,\n not on things\n that are on\n earth.",
+    "1 Chronicles 16:11: Look to the\n LORD and his\n strength;\n seek his face\n always.",
+    "Psalm 94:19: When anxiety was\n great within me,\n your consolation brought\n me joy.",
+    "Ephesians 3:20: Now to him\n who is able\n to do immeasurably more\n than all we\n ask or imagine,\n according to his\n power that is\n at work within\n us.",
+    "Psalm 118:24: This is the\n day that the\n LORD has made;\n let us rejoice\n and be glad\n in it.",
+    "Romans 15:13: May the God\n of hope fill\n you with all\n joy and peace\n as you trust\n in him,\n so that you\n may overflow with\n hope by the\n power of the\n Holy Spirit.",
+    "Psalm 19:14: May these words\n of my mouth\n and this meditation\n of my heart\n be pleasing in\n your sight,\n LORD,\n my Rock and\n my Redeemer.",
+    "Matthew 6:34: Therefore do not\n worry about tomorrow,\n for tomorrow will\n worry about itself.\n Each day has\n enough trouble of\n its own.",
+    "Philippians 4:6-7: Do not be\n anxious about anything,\n but in every\n situation,\n by prayer and\n petition,\n with thanksgiving,\n present your requests\n to God.\n And the\n peace of God,\n which transcends all\n understanding,\n will guard your\n hearts and your\n minds in\n Christ Jesus.",
+    "Romans 12:12: Be joyful in\n hope,\n patient in\n affliction,\n faithful in\n prayer.",
+    "Psalm 16:8: I keep my\n eyes always on\n the LORD.\n With him at\n my right hand,\n I will not\n be shaken.",
+    "Isaiah 26:3: You will keep\n in perfect peace\n those whose minds\n are steadfast,\n because they trust\n in you.",
+    "1 Corinthians 10:13: No temptation has\n overtaken you except\n what is common\n to mankind.\n And God is\n faithful;\n he will\n not let you\n be tempted beyond\n what you can\n bear.",
+    "2 Corinthians 4:16-18: Therefore we do\n not lose heart.\n Though outwardly we\n are wasting away,\n yet inwardly we\n are being renewed\n day by day.\n For our light\n and momentary troubles\n are achieving for\n us an eternal\n glory that far\n outweighs them all.",
+    "Psalm 139:9-10: If I rise\n on the wings\n of the dawn,\n if I settle\n on the far\n side of the\n sea,\n even there your\n hand will guide\n me,\n your right hand\n will hold me\n fast.",
+    "Romans 5:3-5: Not only so,\n but we also\n glory in our\n sufferings,\n because we know\n that suffering produces\n perseverance;\n perseverance,\n character;\n and character,\n hope.\n And hope does\n not put us\n to shame,\n because God’s love\n has been poured\n out into our\n hearts through the\n Holy Spirit,\n who has been\n given to us.",
+    "Psalm 40:1-3: I waited patiently\n for the LORD;\n he turned to\n me and heard\n my cry.\n He lifted me\n out of the\n slimy pit,\n out of the\n mud and mire;\n he set my\n feet on a\n rock and gave\n me a firm\n place to stand."
+        ];
+
+        fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+            function create3DText(text) {
+                // Remove previous text if it exists
+                if (textMesh) {
+                    scene.remove(textMesh);
+                }
+
+                const textGeometry = new THREE.TextGeometry(text, {
+                    font: font,
+                    size: .7,
+                    height: 0.1,
+                    curveSegments: 5,
+                    bevelEnabled: false,
+                });
+
+                // Center the text
+                textGeometry.computeBoundingBox();
+                const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+
+                const textMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xecfc03
+                });
+                textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+                // Position the text underneath the spinning heart, adjusting for the width
+                textMesh.position.set(-textWidth / 2, -3, 0); // Centering the text
+                scene.add(textMesh);
+            }
+
+            // Function to update text every 10 seconds
+            function updateText() {
+                const randomIndex = Math.floor(Math.random() * textArray.length);
+                create3DText(textArray[randomIndex]);
+            }
+
+            // Display the first text immediately on page load
+            updateText();
+
+            // Change text every 10 seconds
+            setInterval(updateText, 10000);
+        });
+
+        // Animate the scene
+        function animate() {
+            requestAnimationFrame(animate);
+
+            heartMesh.rotation.y += 0.01;
+
+            pulseTime += 0.05;
+            const scale = 2 + Math.sin(pulseTime) * 0.3;
+            heartMesh.scale.set(scale, scale, scale);
+
+            updateParticles();
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+
+</html>
